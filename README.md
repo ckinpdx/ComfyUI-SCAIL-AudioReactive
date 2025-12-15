@@ -34,29 +34,7 @@ Creates SCAIL-compatible 3D skeleton pose renders driven by audio analysis. Inst
 ### Conversion
 - **SCAILPoseFromNLF** — Convert NLF pose sequence to SCAIL format
 
-## Workflow
 
-```
-                                    ┌─── SCAILAudioFeatureExtractor ◄─┐
-                                    │                                 │
-Audio ──┬── SCAILBeatDetector ──────┼─────────────────────────────────┤
-        │                           │                                 │
-        └───────────────────────────┘                                 │
-                                                                      │
-RefImage ──► DWPose ──► SCAILPoseFromDWPose ──┐                       │
-                                              │                       │
-                                              ▼                       │
-                                    SCAILBeatDrivenPose ◄─────────────┘
-                                              │
-                                              ▼
-                                    SCAILAlignPoseToReference
-                                              │
-                                              ▼
-                                    SCAILPoseRenderer
-                                              │
-                                              ▼
-                                    IMAGE → WanSCAILPoseEmbeds
-```
 
 ## Installation
 
