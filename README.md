@@ -63,7 +63,7 @@ RefImage ──► DWPose ──► SCAILPoseFromDWPose ──┐               
 1. Clone to your ComfyUI custom_nodes folder:
 ```bash
 cd ComfyUI/custom_nodes
-git clone https://github.com/YOUR_USERNAME/ComfyUI-SCAIL-AudioReactive
+git clone https://github.com/ckinpdx/ComfyUI-SCAIL-AudioReactive
 ```
 
 2. Install requirements:
