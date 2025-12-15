@@ -1,0 +1,4 @@
+taichi
+numpy
+torch
+librosa
