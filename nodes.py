@@ -477,8 +477,11 @@ JOINT_ROTATION_AXES = {
     8: {"raise": (2, -1.0), "forward": (0, 1.0)},  # right hip
     11: {"raise": (2, 1.0), "forward": (0, 1.0)},  # left hip
     # Knee rotations
-    9: {"bend": (0, -1.0)},   # right knee (bends backward)
-    12: {"bend": (0, -1.0)},  # left knee
+    9: {"bend": (0, 1.0)},   # right knee 
+    12: {"bend": (0, 1.0)},  # left knee
+    # Ankle rotations - to keep feet flat when knees bend
+    10: {"bend": (0, -1.0)},  # right ankle (opposite to knee)
+    13: {"bend": (0, -1.0)},  # left ankle
 }
 
 
@@ -572,7 +575,10 @@ DANCE_POSES = {
         "description": "Body leaning left",
         "rotations": {
             "spine": {"tilt": 15},
-            "head": {"tilt": -5},  # counter-tilt head to stay level
+            "head": {"tilt": -5},
+        },
+        "translations": {
+            "upper": {"x": -6},
         }
     },
     "lean_right": {
@@ -580,16 +586,22 @@ DANCE_POSES = {
         "rotations": {
             "spine": {"tilt": -15},
             "head": {"tilt": 5},
+        },
+        "translations": {
+            "upper": {"x": 6},
         }
     },
     "crouch": {
         "description": "Knees bent, lower stance",
         "rotations": {
-            "right_hip": {"forward": 30},
-            "left_hip": {"forward": 30},
-            "right_knee": {"bend": 45},
-            "left_knee": {"bend": 45},
-            "spine": {"forward": 10},
+            "right_knee": {"bend": 40},
+            "left_knee": {"bend": 40},
+            "right_ankle": {"bend": 20},
+            "left_ankle": {"bend": 20},
+            "spine": {"forward": 8},
+        },
+        "translations": {
+            "all": {"y": 15},
         }
     },
     "pump_right": {
@@ -621,69 +633,105 @@ DANCE_POSES = {
     "hip_left": {
         "description": "Hips shifted left",
         "rotations": {
-            "right_hip": {"raise": 10},
-            "left_hip": {"raise": -5},
-            "spine": {"tilt": 8},
+            "spine": {"tilt": 12},
+            "left_knee": {"bend": 25},
+            "right_knee": {"bend": 8},
+            "left_ankle": {"bend": 12},
+            "right_ankle": {"bend": 4},
+        },
+        "translations": {
+            "hips": {"x": -8},  # Subtle shift
         }
     },
     "hip_right": {
         "description": "Hips shifted right",
         "rotations": {
-            "right_hip": {"raise": -5},
-            "left_hip": {"raise": 10},
-            "spine": {"tilt": -8},
+            "spine": {"tilt": -12},
+            "right_knee": {"bend": 25},
+            "left_knee": {"bend": 8},
+            "right_ankle": {"bend": 12},
+            "left_ankle": {"bend": 4},
+        },
+        "translations": {
+            "hips": {"x": 8},  # Subtle shift
         }
     },
-    "step_right": {
-        "description": "Weight on right leg, left foot lifted",
+    "slide_right": {
+        "description": "Weight slides right, both feet grounded",
         "rotations": {
-            "right_knee": {"bend": 20},
-            "left_hip": {"forward": 35, "raise": 15},
-            "left_knee": {"bend": 45},
-            "spine": {"tilt": -5},
-        }
-    },
-    "step_left": {
-        "description": "Weight on left leg, right foot lifted",
-        "rotations": {
-            "left_knee": {"bend": 20},
-            "right_hip": {"forward": 35, "raise": 15},
-            "right_knee": {"bend": 45},
-            "spine": {"tilt": 5},
-        }
-    },
-    "kick_right": {
-        "description": "Right leg kicked forward",
-        "rotations": {
-            "left_knee": {"bend": 15},
-            "right_hip": {"forward": 50},
-            "right_knee": {"bend": -10},
-            "spine": {"forward": -5},
-        }
-    },
-    "kick_left": {
-        "description": "Left leg kicked forward",
-        "rotations": {
-            "right_knee": {"bend": 15},
-            "left_hip": {"forward": 50},
-            "left_knee": {"bend": -10},
-            "spine": {"forward": -5},
-        }
-    },
-    "march_right": {
-        "description": "Right knee raised (marching)",
-        "rotations": {
+            "spine": {"tilt": -15},
+            "right_knee": {"bend": 35},
             "left_knee": {"bend": 10},
-            "right_hip": {"forward": 60},
-            "right_knee": {"bend": 70},
+            "right_ankle": {"bend": 18},
+            "left_ankle": {"bend": 5},
+        },
+        "translations": {
+            "hips": {"x": 10},
         }
     },
-    "march_left": {
-        "description": "Left knee raised (marching)",
+    "slide_left": {
+        "description": "Weight slides left, both feet grounded",
         "rotations": {
+            "spine": {"tilt": 15},
+            "left_knee": {"bend": 35},
             "right_knee": {"bend": 10},
-            "left_hip": {"forward": 60},
-            "left_knee": {"bend": 70},
+            "left_ankle": {"bend": 18},
+            "right_ankle": {"bend": 5},
+        },
+        "translations": {
+            "hips": {"x": -10},
+        }
+    },
+    "shuffle_right": {
+        "description": "Shuffle step right, feet grounded",
+        "rotations": {
+            "spine": {"tilt": -12, "turn": -15},
+            "right_knee": {"bend": 30},
+            "left_knee": {"bend": 15},
+            "right_ankle": {"bend": 15},
+            "left_ankle": {"bend": 8},
+        },
+        "translations": {
+            "hips": {"x": 8},
+        }
+    },
+    "shuffle_left": {
+        "description": "Shuffle step left, feet grounded",
+        "rotations": {
+            "spine": {"tilt": 12, "turn": 15},
+            "left_knee": {"bend": 30},
+            "right_knee": {"bend": 15},
+            "left_ankle": {"bend": 15},
+            "right_ankle": {"bend": 8},
+        },
+        "translations": {
+            "hips": {"x": -8},
+        }
+    },
+    "groove_right": {
+        "description": "Groove with weight on right",
+        "rotations": {
+            "right_knee": {"bend": 40},
+            "left_knee": {"bend": 15},
+            "right_ankle": {"bend": 20},
+            "left_ankle": {"bend": 8},
+            "spine": {"tilt": -8, "forward": 8},
+        },
+        "translations": {
+            "hips": {"x": 6, "y": 5},
+        }
+    },
+    "groove_left": {
+        "description": "Groove with weight on left",
+        "rotations": {
+            "left_knee": {"bend": 40},
+            "right_knee": {"bend": 15},
+            "left_ankle": {"bend": 20},
+            "right_ankle": {"bend": 8},
+            "spine": {"tilt": 8, "forward": 8},
+        },
+        "translations": {
+            "hips": {"x": -6, "y": 5},
         }
     },
     "arms_crossed_low": {
@@ -710,49 +758,49 @@ DANCE_POSES = {
 }
 
 # Move sequences for different energy levels
-# Designed to FLOW - no constant neutral resets, poses lead into each other
+# Natural flow - no squatting between every move!
 MOVE_SEQUENCES = {
     "low": [
         # Gentle swaying
         ["lean_left", "lean_right", "lean_left", "lean_right"],
         ["hip_left", "hip_right", "hip_left", "hip_right"],
-        ["look_left", "head_down", "look_right", "head_down"],
-        # Subtle stepping - with grounded poses between
-        ["step_left", "neutral", "step_right", "neutral"],
-        ["lean_left", "step_left", "lean_right", "step_right"],
+        ["look_left", "look_right", "look_left", "look_right"],
+        # Subtle grooving
+        ["groove_left", "groove_right", "groove_left", "groove_right"],
+        ["slide_left", "slide_right", "slide_left", "slide_right"],
+        ["hip_left", "lean_left", "hip_right", "lean_right"],
     ],
     "medium": [
-        # Arm flows
+        # Arm flows - let arms actually move!
         ["pump_right", "pump_left", "pump_right", "pump_left"],
-        ["arms_out", "arms_crossed_low", "arms_out", "arms_crossed_low"],
+        ["arms_out", "arms_up", "arms_out", "arms_up"],
         ["pump_right", "arms_up", "pump_left", "arms_up"],
-        # Body flows
-        ["lean_left", "crouch", "lean_right", "crouch"],
-        ["crouch", "arms_out", "crouch", "arms_up"],
-        # Stepping flows - GROUNDED between leg lifts
-        ["step_left", "crouch", "step_right", "crouch"],
-        ["step_left", "pump_left", "step_right", "pump_right"],
-        ["march_left", "crouch", "march_right", "crouch"],
-        # Combined
-        ["lean_left", "pump_right", "lean_right", "pump_left"],
-        ["hip_left", "arms_up", "hip_right", "arms_out"],
+        ["arms_up", "arms_out", "arms_up", "arms_crossed_low"],
+        # Body + arms together
+        ["lean_left", "pump_left", "lean_right", "pump_right"],
+        ["hip_left", "arms_up", "hip_right", "arms_up"],
+        ["groove_left", "pump_left", "groove_right", "pump_right"],
+        # Slides with arms
+        ["slide_left", "arms_out", "slide_right", "arms_out"],
+        ["shuffle_left", "pump_left", "shuffle_right", "pump_right"],
+        ["groove_left", "arms_up", "groove_right", "arms_up"],
     ],
     "high": [
-        # High energy arm combos
-        ["arms_up", "crouch", "arms_up", "crouch"],
+        # High energy arms
+        ["arms_up", "pump_right", "arms_up", "pump_left"],
         ["pump_right", "arms_up", "pump_left", "arms_up"],
-        ["arms_out", "arms_up", "arms_out", "crouch"],
-        # Kicks and marches - GROUNDED between
-        ["kick_right", "crouch", "kick_left", "crouch"],
-        ["march_left", "arms_up", "march_right", "arms_up"],
-        ["kick_right", "arms_up", "kick_left", "arms_up"],
-        # Full body flows
-        ["crouch", "arms_up", "lean_left", "arms_out", "lean_right", "crouch"],
-        ["step_left", "arms_up", "crouch", "step_right", "arms_out", "crouch"],
-        ["march_left", "pump_left", "crouch", "march_right", "pump_right", "crouch"],
-        # Explosive
-        ["crouch", "arms_up", "crouch", "kick_right", "crouch", "kick_left"],
-        ["head_back", "arms_up", "crouch", "arms_up"],
+        ["arms_out", "arms_up", "arms_out", "arms_up"],
+        # Movement + arms
+        ["slide_right", "arms_up", "slide_left", "arms_up"],
+        ["shuffle_left", "arms_up", "shuffle_right", "arms_up"],
+        ["groove_right", "pump_right", "groove_left", "pump_left"],
+        # Full combos - crouch only as accent
+        ["groove_left", "arms_up", "lean_right", "arms_out"],
+        ["slide_left", "pump_left", "slide_right", "pump_right"],
+        ["hip_left", "arms_up", "hip_right", "pump_right", "hip_left", "pump_left"],
+        # Crouch as rare accent, not constant
+        ["arms_up", "crouch", "arms_up", "arms_out"],
+        ["pump_right", "pump_left", "crouch", "arms_up"],
     ],
 }
 
@@ -841,49 +889,48 @@ class MotionDynamics:
     }
     
     # Drag factors per joint (0 = instant, higher = more follow-through)
-    # These are MUCH lower now for snappier response
+    # Keep low for responsive motion
     JOINT_DRAG = {
-        0: 0.15,  # nose
-        1: 0.02,  # neck - leads, very responsive
-        2: 0.08,  # r_shoulder
+        0: 0.10,  # nose
+        1: 0.03,  # neck - leads
+        2: 0.08,  # r_shoulder - responsive
         3: 0.12,  # r_elbow
-        4: 0.18,  # r_wrist - most follow-through
+        4: 0.18,  # r_wrist - trails
         5: 0.08,  # l_shoulder
         6: 0.12,  # l_elbow
         7: 0.18,  # l_wrist
-        8: 0.03,  # r_hip - core, very responsive
-        9: 0.10,  # r_knee
-        10: 0.06, # r_ankle
-        11: 0.03, # l_hip
-        12: 0.10, # l_knee
-        13: 0.06, # l_ankle
-        14: 0.15, # r_eye
-        15: 0.15, # l_eye
-        16: 0.20, # r_ear
-        17: 0.20, # l_ear
+        8: 0.01,  # r_hip (snapped anyway)
+        9: 0.01,  # r_knee
+        10: 0.01, # r_ankle
+        11: 0.01, # l_hip
+        12: 0.01, # l_knee
+        13: 0.01, # l_ankle
+        14: 0.10, # r_eye
+        15: 0.10, # l_eye
+        16: 0.15, # r_ear
+        17: 0.15, # l_ear
     }
     
-    # Stiffness - how quickly joints try to reach target (spring constant)
-    # Higher = snappier, more responsive
+    # Stiffness - MUCH higher for actual visible motion
     JOINT_STIFFNESS = {
-        0: 15.0,  # nose
-        1: 25.0,  # neck - very snappy
-        2: 20.0,  # shoulders
-        3: 15.0,  # elbows
-        4: 12.0,  # wrists
-        5: 20.0,
-        6: 15.0,
-        7: 12.0,
-        8: 30.0,  # hips - very strong
-        9: 22.0,  # knees
-        10: 18.0, # ankles
-        11: 30.0,
-        12: 22.0,
-        13: 18.0,
-        14: 12.0, # eyes
-        15: 12.0,
-        16: 10.0, # ears
-        17: 10.0,
+        0: 25.0,  # nose
+        1: 35.0,  # neck - snappy
+        2: 30.0,  # shoulders - responsive!
+        3: 25.0,  # elbows
+        4: 20.0,  # wrists
+        5: 30.0,
+        6: 25.0,
+        7: 20.0,
+        8: 80.0,  # hips (snapped anyway)
+        9: 80.0,  # knees
+        10: 80.0, # ankles
+        11: 80.0,
+        12: 80.0,
+        13: 80.0,
+        14: 20.0, # eyes
+        15: 20.0,
+        16: 15.0, # ears
+        17: 15.0,
     }
     
     def __init__(self, num_joints=18):
@@ -915,19 +962,32 @@ class MotionDynamics:
             self.positions = target_pose.copy()
             return self.positions.copy()
         
+        # Leg joints that should SNAP not blend (to prevent both-legs-up)
+        LEG_JOINTS = {8, 9, 10, 11, 12, 13}  # hips, knees, ankles
+        
         result = np.zeros_like(self.positions)
         
         for j in range(self.num_joints):
-            drag = self.JOINT_DRAG.get(j, 0.1)
-            stiffness = self.JOINT_STIFFNESS.get(j, 15.0) * urgency
+            # LEGS: Snap directly toward target (no smooth physics)
+            # This prevents both legs being up during transitions
+            if j in LEG_JOINTS:
+                # Fast lerp instead of spring physics
+                snap_speed = 0.4 * urgency  # 40% toward target per frame
+                self.positions[j] = self.positions[j] * (1 - snap_speed) + target_pose[j] * snap_speed
+                self.velocities[j] = np.zeros(3)  # No momentum for legs
+                result[j] = self.positions[j]
+                continue
+            
+            # EVERYTHING ELSE: Spring-damper physics for fluid motion
+            drag = self.JOINT_DRAG.get(j, 0.10)
+            stiffness = self.JOINT_STIFFNESS.get(j, 25.0) * urgency
             
             # Spring force towards target
             displacement = target_pose[j] - self.positions[j]
             spring_force = displacement * stiffness
             
-            # Damping - UNDER-damped for liveliness (allows overshoot)
-            # Factor of 1.2 instead of 2.0 (critical) means some bounce
-            damping = 1.2 * np.sqrt(stiffness)
+            # Damping - lower value = more lively, allows overshoot
+            damping = 1.0 * np.sqrt(stiffness)
             damping_force = -self.velocities[j] * damping
             
             # Total acceleration
@@ -1047,6 +1107,8 @@ class SCAILBeatDrivenPose:
         "left_hip": [11, 12, 13],
         "right_knee": [9, 10],
         "left_knee": [12, 13],
+        "right_ankle": [10],
+        "left_ankle": [13],
     }
     
     # Pivot joints for each group
@@ -1061,6 +1123,8 @@ class SCAILBeatDrivenPose:
         "left_hip": 11,
         "right_knee": 9,
         "left_knee": 12,
+        "right_ankle": 10,
+        "left_ankle": 13,
     }
     
     # Rotation axis for each motion type
@@ -1096,18 +1160,39 @@ class SCAILBeatDrivenPose:
     
     def _apply_pose(self, base_joints: np.ndarray, pose_name: str, 
                     intensity: float = 1.0) -> np.ndarray:
-        """Apply a named pose using rotations."""
+        """Apply a named pose using rotations and translations."""
         if pose_name not in DANCE_POSES:
             return base_joints.copy()
         
         pose_def = DANCE_POSES[pose_name]
         rotations = pose_def.get("rotations", {})
+        translations = pose_def.get("translations", {})
         
         result = base_joints.copy()
         
+        # Apply rotations
         for group, motions in rotations.items():
             for motion, angle in motions.items():
                 result = self._apply_rotation(result, group, motion, angle * intensity)
+        
+        # Apply translations (direct joint position offsets)
+        # "all" moves all joints, or specify joint indices
+        for target, offset in translations.items():
+            if target == "all":
+                for i in range(len(result)):
+                    result[i, 0] += offset.get("x", 0) * intensity
+                    result[i, 1] += offset.get("y", 0) * intensity
+                    result[i, 2] += offset.get("z", 0) * intensity
+            elif target == "upper":  # Everything except legs
+                for i in [0, 1, 2, 3, 4, 5, 6, 7, 14, 15, 16, 17]:
+                    result[i, 0] += offset.get("x", 0) * intensity
+                    result[i, 1] += offset.get("y", 0) * intensity
+                    result[i, 2] += offset.get("z", 0) * intensity
+            elif target == "hips":  # Core body shift
+                for i in [1, 2, 5, 8, 11]:  # neck, shoulders, hips
+                    result[i, 0] += offset.get("x", 0) * intensity
+                    result[i, 1] += offset.get("y", 0) * intensity
+                    result[i, 2] += offset.get("z", 0) * intensity
         
         return result
     
@@ -1165,26 +1250,43 @@ class SCAILBeatDrivenPose:
         beat_period = 60.0 / tempo
         phase = (time_sec / beat_period) * 2 * np.pi
         
-        # === BASS: Subtle bounce and knee pulse ===
+        # Half-time phase (bounce every other beat - more natural)
+        half_phase = phase * 0.5
+        
+        # === BASS: Down-on-the-beat bounce ===
         if bass_int > 0:
-            # Gentle vertical pulse - affects whole body uniformly
-            bounce = bass * bass_int * 8.0 * np.sin(phase * 2)
+            # Sharp down, smooth up - like a real bounce
+            # Use a curve that goes down quickly on beat, rises slowly between
+            # cos gives us: 1 at phase=0 (between beats), -1 at phase=pi (on beat)
+            # We want DOWN on beat, so positive values = down
+            bounce_curve = -np.cos(half_phase)  # -1 to 1, peaks DOWN at downbeat
+            
+            # Make it punchier: sharpen the curve so down is quick, up is gradual
+            if bounce_curve > 0:
+                bounce_curve = bounce_curve ** 0.7  # Sharpen the down
+            else:
+                bounce_curve = -((-bounce_curve) ** 1.5)  # Soften the up
+            
+            bounce = bass * bass_int * 6.0 * max(0, bounce_curve)  # Subtle bounce
             result[:, 1] += bounce
             
-            # Subtle knee bend pulse
-            knee_pulse = bass * bass_int * 10
-            result = self._apply_rotation(result, "right_knee", "bend", knee_pulse)
-            result = self._apply_rotation(result, "left_knee", "bend", knee_pulse)
+            # Subtle knee pulse - not a squat!
+            knee_bend = bass * bass_int * 6 * max(0, bounce_curve)
+            ankle_bend = knee_bend * 0.5
+            result = self._apply_rotation(result, "right_knee", "bend", knee_bend)
+            result = self._apply_rotation(result, "left_knee", "bend", knee_bend)
+            result = self._apply_rotation(result, "right_ankle", "bend", ankle_bend)
+            result = self._apply_rotation(result, "left_ankle", "bend", ankle_bend)
         
-        # === MID: Sway ===
+        # === MID: Sway (half-time, alternating sides) ===
         if mid_int > 0:
-            # Smooth horizontal sway
-            sway = np.sin(phase) * mid * mid_int * 8.0
+            # Smooth horizontal sway at half tempo
+            sway = np.sin(half_phase) * mid * mid_int * 10.0
             result[:, 0] += sway
             
             # Subtle spine follow
             result = self._apply_rotation(result, "spine", "tilt", 
-                                          np.sin(phase) * mid * mid_int * 3)
+                                          np.sin(half_phase) * mid * mid_int * 4)
         
         # === TREBLE: Arm energy ===
         if treble_int > 0:
@@ -1193,8 +1295,8 @@ class SCAILBeatDrivenPose:
             result = self._apply_rotation(result, "right_shoulder", "raise", arm_lift)
             result = self._apply_rotation(result, "left_shoulder", "raise", arm_lift)
             
-            # Elbow variation
-            elbow_var = 20 + np.sin(phase * 2) * treble * treble_int * 10
+            # Elbow variation at half-time
+            elbow_var = 20 + np.sin(half_phase) * treble * treble_int * 10
             result = self._apply_rotation(result, "right_elbow", "bend", elbow_var)
             result = self._apply_rotation(result, "left_elbow", "bend", elbow_var)
         
@@ -1240,22 +1342,18 @@ class SCAILBeatDrivenPose:
         print(f"[SCAIL-BeatDriven] Tempo: {tempo:.1f} BPM, Motion dynamics enabled")
         print(f"[SCAIL-BeatDriven] Smoothness: {motion_smoothness}, Snap: {motion_snap}")
         
-        # Leg-lift poses that need timing constraints
-        LEG_LIFT_POSES = {"step_left", "step_right", "kick_left", "kick_right", "march_left", "march_right"}
+        # All poses are now grounded (slide/shuffle style) - no leg lifts
         GROUNDED_POSES = {"neutral", "crouch", "lean_left", "lean_right", "hip_left", "hip_right", 
                          "arms_up", "arms_out", "pump_left", "pump_right", "arms_crossed_low",
-                         "head_down", "head_back", "look_left", "look_right"}
-        
-        # Timing constraints (in frames)
-        min_leg_lift_frames = max(3, int(fps * 0.15))  # At least 150ms or 3 frames
-        max_leg_lift_frames = int(fps * 0.6)  # Max 600ms (about half a second)
+                         "head_down", "head_back", "look_left", "look_right",
+                         "slide_left", "slide_right", "shuffle_left", "shuffle_right",
+                         "groove_left", "groove_right"}
         
         # Build keyframe schedule
         keyframes = []
         current_sequence = []
         sequence_idx = 0
         last_pose = "neutral"
-        leg_lift_start_frame = None  # Track when leg lift started
         
         for i, beat_frame in enumerate(beat_frames):
             is_downbeat = beat_frame in downbeat_frames
@@ -1274,47 +1372,13 @@ class SCAILBeatDrivenPose:
             pose_name = current_sequence[sequence_idx]
             sequence_idx += 1
             
-            # === LEG TIMING CONSTRAINTS ===
-            
-            # Check if we're currently in a leg lift
-            if leg_lift_start_frame is not None:
-                frames_in_lift = beat_frame - leg_lift_start_frame
-                
-                # If we've been lifting too long, force a grounded pose
-                if frames_in_lift >= max_leg_lift_frames:
-                    if pose_name in LEG_LIFT_POSES:
-                        # Pick a grounded pose instead
-                        pose_name = "crouch" if rng.random() < 0.5 else "neutral"
-                    leg_lift_start_frame = None
-                    
-            # Check if this is a new leg lift
-            if pose_name in LEG_LIFT_POSES:
-                if leg_lift_start_frame is None:
-                    # Starting a new leg lift
-                    leg_lift_start_frame = beat_frame
-                    
-                    # Check if next beat is too soon (leg won't register)
-                    if i + 1 < len(beat_frames):
-                        next_beat = int(beat_frames[i + 1])
-                        if next_beat - beat_frame < min_leg_lift_frames:
-                            # Too short - skip this leg lift, do something grounded
-                            pose_name = last_pose if last_pose in GROUNDED_POSES else "crouch"
-                            leg_lift_start_frame = None
-            else:
-                # Not a leg lift pose - reset tracker
-                leg_lift_start_frame = None
-            
-            # On downbeats, maybe add emphasis without breaking flow
+            # On downbeats, maybe add emphasis
             if is_downbeat and rng.random() < 0.3:
-                # Pick emphasis moves that work as transitions
-                if last_pose in ["lean_left", "lean_right", "hip_left", "hip_right"]:
+                if last_pose in ["lean_left", "lean_right", "hip_left", "hip_right", 
+                                "slide_left", "slide_right", "shuffle_left", "shuffle_right"]:
                     pose_name = "crouch"
-                    leg_lift_start_frame = None
                 elif last_pose in ["pump_right", "pump_left"]:
                     pose_name = "arms_up"
-                elif last_pose in LEG_LIFT_POSES:
-                    pose_name = "crouch"  # Ground after leg lift
-                    leg_lift_start_frame = None
                 elif last_pose == "crouch":
                     pose_name = "arms_up"
             
@@ -1328,10 +1392,9 @@ class SCAILBeatDrivenPose:
             # Long gap at start - ease in from neutral
             keyframes.insert(0, (0, "neutral", False))
         
-        # End: return to a grounded pose
+        # End: return to a relaxed pose
         if len(keyframes) > 0 and keyframes[-1][0] < frame_count - 10:
-            # Ease out to something grounded
-            final_pose = "neutral" if last_pose in LEG_LIFT_POSES or last_pose == "arms_up" else last_pose
+            final_pose = "neutral" if last_pose == "arms_up" else last_pose
             keyframes.append((frame_count - 1, final_pose, False))
         
         print(f"[SCAIL-BeatDriven] Created {len(keyframes)} keyframes")
@@ -1382,9 +1445,6 @@ class SCAILBeatDrivenPose:
             target_frame, target_pose_name, is_downbeat = target_kf
             target_joints = keyframe_poses.get(target_frame, base_joints)
             
-            # Leg lift poses - don't anticipate into these
-            LEG_LIFT_POSES = {"step_left", "step_right", "kick_left", "kick_right", "march_left", "march_right"}
-            
             # Calculate urgency based on proximity to next beat
             # More urgent = snappier motion as we approach the beat
             if next_kf is not None:
@@ -1398,12 +1458,7 @@ class SCAILBeatDrivenPose:
                     progress = frames_since_last / total_span
                     
                     # Anticipation: start moving toward next pose early
-                    # BUT NOT if next pose is a leg lift (would cause both legs up)
-                    # AND NOT if current pose is a leg lift (need to complete it first)
-                    can_anticipate = (next_pose_name not in LEG_LIFT_POSES and 
-                                     target_pose_name not in LEG_LIFT_POSES)
-                    
-                    if progress > 0.7 and can_anticipate:
+                    if progress > 0.7:
                         # Blend target toward next pose
                         next_joints = keyframe_poses.get(next_kf[0], base_joints)
                         blend = (progress - 0.7) / 0.3  # 0 to 1 over last 30%
