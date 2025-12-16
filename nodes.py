@@ -569,7 +569,7 @@ class SCAILBeatDrivenPose:
                 "dance_style": (["auto"] + sorted(list(PRESET_SEQUENCES.keys())), {"default": "auto"}),
                 "interaction_mode": (["unison", "mirror", "random"], {"default": "mirror"}),
                 "energy_style": (["auto", "low", "medium", "high"], {"default": "auto"}),
-                "motion_smoothness": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 3.0}),
+                "motion_smoothness": ("FLOAT", {"default": 0.5, "min": 0.1, "max": 3.0, "tooltip": "Lower = snappier poses that show dance style differences, higher = smoother/floaty transitions"}),
                 "anticipation": ("INT", {"default": 3, "min": 0, "max": 10, "tooltip": "Frames to start moving BEFORE beat"}),
                 "groove_amount": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 3.0, "tooltip": "Hip sine wave intensity"}),
                 "bass_intensity": ("FLOAT", {"default": 1.2, "min": 0.0, "max": 5.0}),
