@@ -1219,7 +1219,6 @@ class SCAILAlignPoseToReference:
 # AIST++ CHUNK LIBRARY NODES
 # ============================================================================
 
-
 # HuggingFace dataset URL
 AIST_HF_URL = "https://huggingface.co/datasets/ckinpdx/aist_chunks/resolve/main/aist_chunks_v2.tar.gz"
 
@@ -1758,12 +1757,14 @@ class SCAILAISTBeatDance:
                 all_joints.append(pose.astype(np.float32))
             
             # Advance frame counter (once for sync, per-char for independent)
-            # Don't reset to 0 here - chaining logic in get_pose_from_state handles that
+            # Don't advance during transition - hold on first frame until blend complete
             if sync_dancers:
-                shared_state['chunk_frame'] += 1
+                if not shared_state['in_transition']:
+                    shared_state['chunk_frame'] += 1
             else:
                 for state in char_states:
-                    state['chunk_frame'] += 1
+                    if not state['in_transition']:
+                        state['chunk_frame'] += 1
             
             # Combine all characters into single array
             frame_joints = np.concatenate(all_joints, axis=0)
@@ -2125,24 +2126,80 @@ class SCAILAISTFullSequence:
         # Time scaling
         time_scale = source_fps / target_fps
         
+        # Build list of available sequences for chaining (exclude current)
+        available_sequences = [f for f in library['sequences'][genre] if f != fname]
+        
+        # Track current sequence state
+        current_sequence = sequence
+        current_fname = fname
+        current_src_frame = start_frame
+        prev_last_pose = None  # For transition blending
+        in_transition = False
+        transition_frame = 0
+        
         # Generate output poses
         output_poses = []
         
         for frame_idx in range(frame_count):
             # Map to source frame
-            src_frame_float = start_frame + (frame_idx * time_scale)
+            src_frame_float = current_src_frame + (frame_idx * time_scale)
+            
+            # Adjust for sequence-local position after chaining
+            if frame_idx > 0:
+                src_frame_float = current_src_frame
+                current_src_frame += time_scale
+            
             src_frame_low = int(src_frame_float)
-            src_frame_high = min(src_frame_low + 1, len(sequence) - 1)
+            src_frame_high = min(src_frame_low + 1, len(current_sequence) - 1)
             t = src_frame_float - src_frame_low
             
-            # Handle end of sequence - hold last frame
-            if src_frame_low >= len(sequence):
-                src_frame_low = len(sequence) - 1
-                src_frame_high = src_frame_low
-                t = 0
+            # Check if we need a new sequence
+            if src_frame_low >= len(current_sequence) - 1:
+                if available_sequences:
+                    # Save last pose for blending
+                    prev_last_pose = current_sequence[-1].copy()
+                    in_transition = True
+                    transition_frame = 0
+                    
+                    # Pick new sequence (exclude current)
+                    new_fname = random.choice(available_sequences)
+                    available_sequences = [f for f in available_sequences if f != new_fname]
+                    if not available_sequences:
+                        # Refill pool, exclude only current
+                        available_sequences = [f for f in library['sequences'][genre] if f != new_fname]
+                    
+                    # Load new sequence
+                    new_path = os.path.join(base_path, genre, new_fname)
+                    new_coco = np.load(new_path)
+                    current_sequence = coco_to_openpose(new_coco)
+                    current_fname = new_fname
+                    current_src_frame = 0
+                    
+                    print(f"[AIST Full] Chaining to: {genre}/{new_fname} ({len(current_sequence)} frames)")
+                    
+                    # Reset frame indices
+                    src_frame_low = 0
+                    src_frame_high = min(1, len(current_sequence) - 1)
+                    t = 0
+                else:
+                    # No more sequences, hold last frame
+                    src_frame_low = len(current_sequence) - 1
+                    src_frame_high = src_frame_low
+                    t = 0
             
-            # Interpolate
-            pose = (1 - t) * sequence[src_frame_low] + t * sequence[src_frame_high]
+            # Interpolate within current sequence
+            pose = (1 - t) * current_sequence[src_frame_low] + t * current_sequence[src_frame_high]
+            
+            # Handle transition blending between sequences
+            if in_transition and prev_last_pose is not None:
+                blend_t = transition_frame / transition_frames
+                blend_t = blend_t * blend_t * (3 - 2 * blend_t)  # Smooth easing
+                pose = (1 - blend_t) * prev_last_pose + blend_t * pose
+                
+                transition_frame += 1
+                if transition_frame >= transition_frames:
+                    in_transition = False
+                    prev_last_pose = None
             
             # Build output for all characters
             all_joints = []
