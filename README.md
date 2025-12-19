@@ -144,6 +144,8 @@ Movements are normalized based on the character's torso length. A small characte
 ### AIST++ Data Processing
 The AIST++ dance data is converted from COCO 17-keypoint format to OpenPose 18-keypoint format for SCAIL compatibility. Chunks are cut at velocity minimums (natural pauses in movement) rather than fixed intervals to preserve move integrity. Energy tagging uses velocity + acceleration metrics, calculated per-genre to account for style differences (krump is naturally higher energy than house).
 
+
+
 ## Credits
 
 - SCAIL: [zai-org/SCAIL](https://github.com/zai-org/SCAIL)
@@ -151,4 +153,31 @@ The AIST++ dance data is converted from COCO 17-keypoint format to OpenPose 18-k
 - ComfyUI integration: [kijai/ComfyUI-SCAIL-Pose](https://github.com/kijai/ComfyUI-SCAIL-Pose)
 - Beat detection: [librosa](https://librosa.org/)
 - Expanded Pose Library: Discord user **NebSH**
-- AIST++ Dataset: [Google Research](https://google.github.io/aistplusplus_dataset/) — "AI Choreographer: Music Conditioned 3D Dance Generation with AIST++" (Li et al., ICCV 2021) — CC-BY-4.0 License
+
+
+## Legal & Licensing
+
+This software downloads and processes third-party datasets. Users are responsible for complying with the attribution requirements of these licenses when publishing generated content.
+1. CMU Motion Capture Database
+
+    Source: mocap.cs.cmu.edu
+
+    License: Free for use (including commercial), but requires citation.
+
+    Required Citation:
+
+        "The data used in this project was obtained from mocap.cs.cmu.edu. The database was created with funding from NSF EIA-0196217."
+
+2. AIST++ Dataset
+
+    Source: Google Research AIST++
+
+    License: CC-BY 4.0 International
+
+    Terms: Commercial use allowed. Modification allowed. Redistribution allowed.
+
+    Required Attribution: You must give appropriate credit to the original researchers (Li et al., ICCV 2021) in your derived works (videos/images).
+
+Disclaimer
+
+The authors of SCAIL are not responsible for end-user license violations. This tool is provided "AS IS" without warranty of any kind. Access to the datasets is facilitated for research and creative toolchain integration; no ownership of the raw data is claimed.
