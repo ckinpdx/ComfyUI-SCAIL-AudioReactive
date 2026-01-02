@@ -217,44 +217,109 @@ class SCAILCMUMotion:
                 if end_idx <= len(ref_joints):
                     char_joints = ref_joints[start_idx:end_idx]
                     
-                    # Calculate scale using head to straight leg average
+                    # Helper to check if joint is valid (not zero/origin)
+                    def is_valid(joint_idx):
+                        j = char_joints[joint_idx]
+                        return abs(j[0]) > 1e-3 or abs(j[1]) > 1e-3 or abs(j[2]) > 1e-3
+                    
+                    # Helper to calculate leg angle for straight leg detection
                     def calc_leg_angle(hip, knee, ankle):
                         v1 = hip - knee
                         v2 = ankle - knee
                         cos_angle = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2) + 1e-8)
                         return np.degrees(np.arccos(np.clip(cos_angle, -1, 1)))
                     
-                    l_hip = char_joints[11]
-                    l_knee = char_joints[12]
-                    l_ankle = char_joints[13]
-                    r_hip = char_joints[8]
-                    r_knee = char_joints[9]
-                    r_ankle = char_joints[10]
+                    CMU_AVG_HEIGHT = 24.0
                     
-                    l_angle = calc_leg_angle(l_hip, l_knee, l_ankle)
-                    r_angle = calc_leg_angle(r_hip, r_knee, r_ankle)
+                    # Cascading scale detection for partial poses
+                    full_height = None
+                    char_scale = None
+                    scale_method = "default"
                     
-                    straight_legs = []
-                    if l_angle > 160:
-                        straight_legs.append(l_ankle[1])
-                    if r_angle > 160:
-                        straight_legs.append(r_ankle[1])
+                    # 1. Try full height (head to ankles) - best
+                    if is_valid(0) and (is_valid(10) or is_valid(13)):
+                        head_y = char_joints[0][1]
+                        
+                        # Use straight leg detection if both legs visible
+                        if is_valid(8) and is_valid(9) and is_valid(10) and is_valid(11) and is_valid(12) and is_valid(13):
+                            l_hip, l_knee, l_ankle = char_joints[11], char_joints[12], char_joints[13]
+                            r_hip, r_knee, r_ankle = char_joints[8], char_joints[9], char_joints[10]
+                            
+                            l_angle = calc_leg_angle(l_hip, l_knee, l_ankle)
+                            r_angle = calc_leg_angle(r_hip, r_knee, r_ankle)
+                            
+                            straight_legs = []
+                            if l_angle > 160:
+                                straight_legs.append(l_ankle[1])
+                            if r_angle > 160:
+                                straight_legs.append(r_ankle[1])
+                            
+                            if straight_legs:
+                                foot_y = sum(straight_legs) / len(straight_legs)
+                            else:
+                                foot_y = max(l_ankle[1], r_ankle[1])
+                        else:
+                            # Partial leg data - use what we have
+                            l_ankle_y = char_joints[13][1] if is_valid(13) else char_joints[10][1]
+                            r_ankle_y = char_joints[10][1] if is_valid(10) else char_joints[13][1]
+                            foot_y = max(l_ankle_y, r_ankle_y)
+                        
+                        full_height = abs(foot_y - head_y)
+                        if full_height > 10:
+                            char_scale = full_height / CMU_AVG_HEIGHT
+                            scale_method = "full_height"
+                        else:
+                            full_height = None
                     
-                    if straight_legs:
-                        foot_y = sum(straight_legs) / len(straight_legs)
+                    # 2. Try torso (neck to hips) - good
+                    if char_scale is None and is_valid(1) and (is_valid(8) or is_valid(11)):
+                        neck = char_joints[1]
+                        r_hip = char_joints[8] if is_valid(8) else char_joints[11]
+                        l_hip = char_joints[11] if is_valid(11) else char_joints[8]
+                        mid_hip = (r_hip + l_hip) / 2
+                        torso_len = np.linalg.norm(neck - mid_hip)
+                        
+                        if torso_len > 3:
+                            # Torso is ~40% of full height, so full = torso / 0.4 = torso * 2.5
+                            full_height = torso_len * 2.5
+                            char_scale = full_height / CMU_AVG_HEIGHT
+                            scale_method = "torso"
+                    
+                    # 3. Try shoulder width - decent
+                    if char_scale is None and is_valid(2) and is_valid(5):
+                        r_shoulder = char_joints[2]
+                        l_shoulder = char_joints[5]
+                        shoulder_width = np.linalg.norm(l_shoulder - r_shoulder)
+                        
+                        if shoulder_width > 2:
+                            # Shoulder width is ~25% of height, so full = width * 4
+                            full_height = shoulder_width * 4
+                            char_scale = full_height / CMU_AVG_HEIGHT
+                            scale_method = "shoulders"
+                    
+                    # 4. Fallback to defaults
+                    if char_scale is None:
+                        full_height = 200
+                        char_scale = 1.0
+                        scale_method = "default"
+                    
+                    print(f"[CMU] Scale method: {scale_method}, scale: {char_scale:.3f}")
+                    
+                    # Get position/depth from best available joint
+                    if is_valid(1):
+                        neck = char_joints[1]
+                        center_x = neck[0]
+                        depth_z = neck[2]
+                    elif is_valid(2) and is_valid(5):
+                        center_x = (char_joints[2][0] + char_joints[5][0]) / 2
+                        depth_z = (char_joints[2][2] + char_joints[5][2]) / 2
                     else:
-                        foot_y = max(l_ankle[1], r_ankle[1])
+                        center_x = 256
+                        depth_z = 800
                     
-                    head_y = char_joints[0][1]
-                    full_height = abs(foot_y - head_y)
-                    
-                    CMU_AVG_HEIGHT = 24.0 
-                    char_scale = full_height / CMU_AVG_HEIGHT if full_height > 0 else 1.0
-                    
-                    neck = char_joints[1]
-                    floor_y = np.max(char_joints[:, 1])
-                    center_x = neck[0]
-                    depth_z = neck[2]
+                    # Floor Y from lowest valid joint
+                    valid_y = [char_joints[j][1] for j in range(18) if is_valid(j)]
+                    floor_y = max(valid_y) if valid_y else 400
                     
                     ref_data.append({
                         'height': full_height,

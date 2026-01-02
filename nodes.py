@@ -1429,53 +1429,121 @@ class SCAILAISTBeatDance:
                 if end_idx <= len(ref_joints):
                     char_joints = ref_joints[start_idx:end_idx]
                     
-                    # Get leg joints
-                    l_hip = char_joints[11]
-                    l_knee = char_joints[12]
-                    l_ankle = char_joints[13]
-                    r_hip = char_joints[8]
-                    r_knee = char_joints[9]
-                    r_ankle = char_joints[10]
+                    # Helper to check if joint is valid (not zero/origin)
+                    def is_valid(joint_idx):
+                        j = char_joints[joint_idx]
+                        return abs(j[0]) > 1e-3 or abs(j[1]) > 1e-3 or abs(j[2]) > 1e-3
                     
-                    # Calculate leg angles
-                    l_angle = calc_leg_angle(l_hip, l_knee, l_ankle)
-                    r_angle = calc_leg_angle(r_hip, r_knee, r_ankle)
+                    # Cascading scale detection for partial poses
+                    full_height = None
+                    char_scale = None
+                    scale_method = "default"
+                    ref_height = 200
+                    l_angle = 0
+                    r_angle = 0
                     
-                    # Only use straight legs (>160°), average them
-                    straight_legs = []
-                    if l_angle > 160:
-                        straight_legs.append(l_ankle[1])
-                    if r_angle > 160:
-                        straight_legs.append(r_ankle[1])
+                    # 1. Try full height with leg angle detection (best) - requires head + full legs
+                    if is_valid(0) and is_valid(8) and is_valid(9) and is_valid(10) and is_valid(11) and is_valid(12) and is_valid(13):
+                        # Get leg joints
+                        l_hip = char_joints[11]
+                        l_knee = char_joints[12]
+                        l_ankle = char_joints[13]
+                        r_hip = char_joints[8]
+                        r_knee = char_joints[9]
+                        r_ankle = char_joints[10]
+                        
+                        # Calculate leg angles
+                        l_angle = calc_leg_angle(l_hip, l_knee, l_ankle)
+                        r_angle = calc_leg_angle(r_hip, r_knee, r_ankle)
+                        
+                        # Only use straight legs (>160°), average them
+                        straight_legs = []
+                        if l_angle > 160:
+                            straight_legs.append(l_ankle[1])
+                        if r_angle > 160:
+                            straight_legs.append(r_ankle[1])
+                        
+                        if straight_legs:
+                            foot_y = sum(straight_legs) / len(straight_legs)
+                        else:
+                            foot_y = max(l_ankle[1], r_ankle[1])
+                        
+                        head_y = char_joints[0][1]
+                        full_height = abs(foot_y - head_y)
+                        
+                        if full_height > 10:
+                            char_scale = full_height / AIST_AVG_HEIGHT
+                            scale_method = "full_height_leg_angle"
+                            
+                            # Also compute ref_height (neck to ankle)
+                            if is_valid(1):
+                                neck = char_joints[1]
+                                ankle_y = (l_ankle[1] + r_ankle[1]) / 2
+                                ref_height = abs(ankle_y - neck[1])
                     
-                    if straight_legs:
-                        foot_y = sum(straight_legs) / len(straight_legs)
+                    # 2. Try full height without leg angle (head + at least one ankle)
+                    if char_scale is None and is_valid(0) and (is_valid(10) or is_valid(13)):
+                        head_y = char_joints[0][1]
+                        l_ankle_y = char_joints[13][1] if is_valid(13) else char_joints[10][1]
+                        r_ankle_y = char_joints[10][1] if is_valid(10) else char_joints[13][1]
+                        foot_y = max(l_ankle_y, r_ankle_y)
+                        full_height = abs(foot_y - head_y)
+                        
+                        if full_height > 10:
+                            char_scale = full_height / AIST_AVG_HEIGHT
+                            scale_method = "full_height_simple"
+                            ref_height = full_height * 0.85
+                    
+                    # 3. Try torso (neck to hips) - good for upper body shots
+                    if char_scale is None and is_valid(1) and (is_valid(8) or is_valid(11)):
+                        neck = char_joints[1]
+                        r_hip = char_joints[8] if is_valid(8) else char_joints[11]
+                        l_hip = char_joints[11] if is_valid(11) else char_joints[8]
+                        mid_hip = (r_hip + l_hip) / 2
+                        torso_len = np.linalg.norm(neck - mid_hip)
+                        
+                        if torso_len > 5:
+                            full_height = torso_len * 2.5
+                            char_scale = full_height / AIST_AVG_HEIGHT
+                            scale_method = "torso"
+                            ref_height = torso_len * 2.1
+                    
+                    # 4. Try shoulder width - decent for close-ups
+                    if char_scale is None and is_valid(2) and is_valid(5):
+                        r_shoulder = char_joints[2]
+                        l_shoulder = char_joints[5]
+                        shoulder_width = np.linalg.norm(l_shoulder - r_shoulder)
+                        
+                        if shoulder_width > 5:
+                            full_height = shoulder_width * 4
+                            char_scale = full_height / AIST_AVG_HEIGHT
+                            scale_method = "shoulders"
+                            ref_height = shoulder_width * 3.4
+                    
+                    # 5. Fallback to defaults
+                    if char_scale is None:
+                        full_height = 200
+                        char_scale = 1.0
+                        scale_method = "default"
+                        ref_height = 200
+                    
+                    print(f"[AIST] Char {i}: method={scale_method} l_angle={l_angle:.0f}° r_angle={r_angle:.0f}° height={full_height:.1f} scale={char_scale:.2f}")
+                    
+                    # Get position/depth from best available joint
+                    if is_valid(1):
+                        neck = char_joints[1]
+                        center_x = neck[0]
+                        depth_z = neck[2]
+                    elif is_valid(2) and is_valid(5):
+                        center_x = (char_joints[2][0] + char_joints[5][0]) / 2
+                        depth_z = (char_joints[2][2] + char_joints[5][2]) / 2
                     else:
-                        # Fallback to lowest foot
-                        foot_y = max(l_ankle[1], r_ankle[1])
+                        center_x = 256
+                        depth_z = 800
                     
-                    # Full height: nose to foot
-                    head_y = char_joints[0][1]  # nose
-                    full_height = abs(foot_y - head_y)
-                    
-                    # Per-character scale
-                    char_scale = full_height / AIST_AVG_HEIGHT if full_height > 0 else 1.0
-                    
-                    print(f"[AIST] Char {i}: l_angle={l_angle:.0f}° r_angle={r_angle:.0f}° height={full_height:.1f} scale={char_scale:.2f}")
-                    
-                    # Also store ref_height for other uses
-                    neck = char_joints[1]
-                    ankle_y = (l_ankle[1] + r_ankle[1]) / 2
-                    ref_height = abs(ankle_y - neck[1])
-                    
-                    # Floor is lowest Y in reference (highest value in screen coords)
-                    floor_y = np.max(char_joints[:, 1])
-                    
-                    # Center X position
-                    center_x = neck[0]
-                    
-                    # Depth from neck
-                    depth_z = neck[2]
+                    # Floor Y from lowest valid joint
+                    valid_y = [char_joints[j][1] for j in range(18) if is_valid(j)]
+                    floor_y = max(valid_y) if valid_y else 400
                     
                     ref_data.append({
                         'height': ref_height,
@@ -1659,6 +1727,18 @@ class SCAILAISTBeatDance:
                 state['chunk_frames'] = new_chunk.get('frames', len(state['chunk_data']))
                 state['chunk_frame'] = 0
                 state['chunks_remaining'] = chunks_per_beat - 1
+                
+                # Calculate adaptive transition frames based on max joint distance
+                if state['prev_last_pose'] is not None and len(state['chunk_data']) > 0:
+                    new_first_pose = state['chunk_data'][0]
+                    max_dist = 0
+                    for j in range(min(len(state['prev_last_pose']), len(new_first_pose))):
+                        dist = np.linalg.norm(state['prev_last_pose'][j] - new_first_pose[j])
+                        max_dist = max(max_dist, dist)
+                    # Scale: ~0.3 frames per unit distance, clamped to [4, transition_frames]
+                    state['adaptive_transition'] = int(np.clip(max_dist * 0.3, 4, transition_frames))
+                else:
+                    state['adaptive_transition'] = transition_frames
             
             if state['chunk_data'] is None:
                 return np.zeros((18, 3), dtype=np.float32)
@@ -1677,13 +1757,14 @@ class SCAILAISTBeatDance:
             
             # Blend from previous chunk if in transition
             if state['in_transition'] and state['prev_last_pose'] is not None:
-                blend_t = state['transition_frame'] / transition_frames
+                adaptive_frames = state.get('adaptive_transition', transition_frames)
+                blend_t = state['transition_frame'] / adaptive_frames
                 # Smooth easing
                 blend_t = blend_t * blend_t * (3 - 2 * blend_t)
                 pose = (1 - blend_t) * state['prev_last_pose'] + blend_t * pose
                 
                 state['transition_frame'] += 1
-                if state['transition_frame'] >= transition_frames:
+                if state['transition_frame'] >= adaptive_frames:
                     state['in_transition'] = False
                     state['prev_last_pose'] = None
             
@@ -2089,14 +2170,68 @@ class SCAILAISTFullSequence:
                 if end_idx <= len(ref_joints):
                     char_joints = ref_joints[start_idx:end_idx]
                     
-                    neck = char_joints[1]
-                    l_ankle = char_joints[13]
-                    r_ankle = char_joints[10]
-                    ankle_y = (l_ankle[1] + r_ankle[1]) / 2
-                    ref_height = abs(ankle_y - neck[1])
-                    floor_y = np.max(char_joints[:, 1])
-                    center_x = neck[0]
-                    depth_z = neck[2]
+                    # Helper to check if joint is valid (not zero/origin)
+                    def is_valid(joint_idx):
+                        j = char_joints[joint_idx]
+                        return abs(j[0]) > 1e-3 or abs(j[1]) > 1e-3 or abs(j[2]) > 1e-3
+                    
+                    # Cascading detection for partial poses
+                    ref_height = None
+                    scale_method = "default"
+                    
+                    # 1. Try neck to ankles (best)
+                    if is_valid(1) and (is_valid(10) or is_valid(13)):
+                        neck = char_joints[1]
+                        l_ankle_y = char_joints[13][1] if is_valid(13) else char_joints[10][1]
+                        r_ankle_y = char_joints[10][1] if is_valid(10) else char_joints[13][1]
+                        ankle_y = (l_ankle_y + r_ankle_y) / 2 if is_valid(10) and is_valid(13) else max(l_ankle_y, r_ankle_y)
+                        ref_height = abs(ankle_y - neck[1])
+                        if ref_height > 10:
+                            scale_method = "neck_to_ankle"
+                        else:
+                            ref_height = None
+                    
+                    # 2. Try torso (neck to hips)
+                    if ref_height is None and is_valid(1) and (is_valid(8) or is_valid(11)):
+                        neck = char_joints[1]
+                        r_hip = char_joints[8] if is_valid(8) else char_joints[11]
+                        l_hip = char_joints[11] if is_valid(11) else char_joints[8]
+                        mid_hip = (r_hip + l_hip) / 2
+                        torso_len = np.linalg.norm(neck - mid_hip)
+                        if torso_len > 5:
+                            ref_height = torso_len * 2.1  # Estimate neck-to-ankle from torso
+                            scale_method = "torso"
+                    
+                    # 3. Try shoulder width
+                    if ref_height is None and is_valid(2) and is_valid(5):
+                        r_shoulder = char_joints[2]
+                        l_shoulder = char_joints[5]
+                        shoulder_width = np.linalg.norm(l_shoulder - r_shoulder)
+                        if shoulder_width > 5:
+                            ref_height = shoulder_width * 3.4  # Estimate neck-to-ankle from shoulders
+                            scale_method = "shoulders"
+                    
+                    # 4. Fallback
+                    if ref_height is None:
+                        ref_height = 200
+                        scale_method = "default"
+                    
+                    print(f"[AIST Full] Char {i}: scale_method={scale_method}, ref_height={ref_height:.1f}")
+                    
+                    # Get position/depth from best available joint
+                    if is_valid(1):
+                        center_x = char_joints[1][0]
+                        depth_z = char_joints[1][2]
+                    elif is_valid(2) and is_valid(5):
+                        center_x = (char_joints[2][0] + char_joints[5][0]) / 2
+                        depth_z = (char_joints[2][2] + char_joints[5][2]) / 2
+                    else:
+                        center_x = 256
+                        depth_z = 800
+                    
+                    # Floor Y from lowest valid joint
+                    valid_y = [char_joints[j][1] for j in range(18) if is_valid(j)]
+                    floor_y = max(valid_y) if valid_y else 400
                     
                     ref_data.append({
                         'height': ref_height,
@@ -2265,6 +2400,8 @@ class SCAILAISTFullSequence:
             "limb_seq": full_limb_seq,
             "bone_colors": full_colors
         },)
+
+
 
 
 # ============================================================================
